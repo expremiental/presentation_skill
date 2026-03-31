@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Делаем презу с AI</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Unbounded:wght@700;800;900&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a14;
+  --bg-card: #14142a;
+  --bg-card-hover: #1e1e3a;
+  --text: #eeeef4;
+  --text-dim: #9090b0;
+  --pink: #ff6b9d;
+  --pink-glow: rgba(255, 107, 157, 0.15);
+  --orange: #ffaa5c;
+  --orange-glow: rgba(255, 170, 92, 0.15);
+  --purple: #b48eff;
+  --purple-glow: rgba(180, 142, 255, 0.15);
+  --cyan: #5ce0d8;
+  --border: rgba(255, 255, 255, 0.06);
+  --radius: 16px;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== CANVAS BG ===== */
+#bgCanvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ===== SLIDE SYSTEM ===== */
+.slide {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 80px;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.slide.active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+  z-index: 10;
+}
+
+.slide-content {
+  max-width: 1100px;
+  width: 100%;
+}
+
+/* ===== TYPOGRAPHY ===== */
+h1 {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 3.4rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 0.5em;
+}
+
+h2 {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-bottom: 0.6em;
+}
+
+h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+}
+
+p, li {
+  font-size: 1.25rem;
+  line-height: 1.7;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.pink { color: var(--pink); }
+.orange { color: var(--orange); }
+.purple { color: var(--purple); }
+.cyan { color: var(--cyan); }
+.dim { color: var(--text-dim); }
+
+/* ===== STEP NUMBER ===== */
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.step-badge.pink-badge {
+  background: var(--pink-glow);
+  color: var(--pink);
+  box-shadow: 0 0 30px var(--pink-glow);
+}
+
+.step-badge.orange-badge {
+  background: var(--orange-glow);
+  color: var(--orange);
+  box-shadow: 0 0 30px var(--orange-glow);
+}
+
+.step-badge.purple-badge {
+  background: var(--purple-glow);
+  color: var(--purple);
+  box-shadow: 0 0 30px var(--purple-glow);
+}
+
+.step-badge.cyan-badge {
+  background: rgba(92, 224, 216, 0.15);
+  color: var(--cyan);
+  box-shadow: 0 0 30px rgba(92, 224, 216, 0.15);
+}
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+}
+
+.card-row {
+  display: flex;
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.card-row .card {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* ===== CODE BLOCK ===== */
+.code-block {
+  background: #0d0d1a;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-dim);
+  margin: 20px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.code-block .prompt-text {
+  color: var(--orange);
+}
+
+.code-block .cursor-blink {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: var(--pink);
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* ===== COPY BUTTON ===== */
+.copy-btn {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  color: var(--text-dim);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 5;
+}
+
+.copy-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: var(--text);
+}
+
+.copy-btn.copied {
+  background: rgba(92, 224, 216, 0.15);
+  color: var(--cyan);
+}
+
+/* ===== URL HIGHLIGHT ===== */
+.url-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.15rem;
+  color: var(--cyan);
+  margin: 16px 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.url-box:hover {
+  background: var(--bg-card-hover);
+  box-shadow: 0 0 20px rgba(92, 224, 216, 0.1);
+}
+
+/* ===== FLIP CARDS ===== */
+.flip-container {
+  perspective: 1000px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+  height: 200px;
+}
+
+.flip-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.flip-container.flipped .flip-card {
+  transform: rotateY(180deg);
+}
+
+.flip-front, .flip-back {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.flip-front {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.flip-back {
+  background: var(--bg-card-hover);
+  border: 1px solid rgba(255, 107, 157, 0.2);
+  transform: rotateY(180deg);
+}
+
+.flip-hint {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-top: 8px;
+  opacity: 0.6;
+}
+
+/* ===== PROGRESS STEPS ===== */
+.steps-visual {
+  display: flex;
+  gap: 0;
+  align-items: center;
+  margin: 32px 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.step-dot {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 800;
+  font-size: 1.2rem;
+  transition: all 0.4s ease;
+  position: relative;
+}
+
+.step-connector {
+  width: 48px;
+  height: 2px;
+  background: var(--border);
+  transition: background 0.4s ease;
+}
+
+.step-dot.done {
+  box-shadow: 0 0 25px var(--pink-glow);
+}
+
+.step-label {
+  position: absolute;
+  bottom: -28px;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+}
+
+/* ===== PROMPT EXAMPLES ===== */
+.prompt-example {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.prompt-example:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255, 170, 92, 0.2);
+  transform: translateX(4px);
+}
+
+.prompt-emoji {
+  font-size: 1.8rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.prompt-text-block p {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.prompt-text-block .prompt-label {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* ===== BROWSER MOCKUP ===== */
+.browser-mock {
+  background: #1a1a2e;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-top: 24px;
+  max-width: 700px;
+}
+
+.browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #12122a;
+  border-bottom: 1px solid var(--border);
+}
+
+.browser-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+
+.browser-url {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-left: 8px;
+}
+
+.browser-body {
+  padding: 32px;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.browser-body h3 {
+  font-family: 'Unbounded', sans-serif;
+  font-size: 1.6rem;
+  color: var(--pink);
+  margin-bottom: 8px;
+}
+
+/* ===== NAVIGATION ===== */
+.nav-dots {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 100;
+}
+
+.nav-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+  padding: 0;
+}
+
+.nav-dot.active {
+  background: var(--pink);
+  box-shadow: 0 0 10px var(--pink-glow);
+  transform: scale(1.3);
+}
+
+.nav-dot:hover {
+  background: rgba(255,255,255,0.4);
+}
+
+.slide-counter {
+  position: fixed;
+  bottom: 24px;
+  right: 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  opacity: 0.5;
+  z-index: 100;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-in {
+  opacity: 0;
+  animation: fadeUp 0.6s ease forwards;
+}
+
+.slide.active .animate-in {
+  animation: fadeUp 0.6s ease forwards;
+}
+
+.slide.active .delay-1 { animation-delay: 0.15s; }
+.slide.active .delay-2 { animation-delay: 0.3s; }
+.slide.active .delay-3 { animation-delay: 0.45s; }
+.slide.active .delay-4 { animation-delay: 0.6s; }
+.slide.active .delay-5 { animation-delay: 0.75s; }
+
+/* ===== TYPING ANIMATION ===== */
+.typing-container {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.1rem;
+  color: var(--orange);
+  min-height: 1.5em;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .slide { padding: 40px 32px; }
+  h1 { font-size: 2.4rem; }
+  h2 { font-size: 1.6rem; }
+  .card-row { flex-direction: column; }
+  .steps-visual { gap: 4px; }
+  .step-dot { width: 48px; height: 48px; font-size: 1rem; }
+  .step-connector { width: 24px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<!-- ===== SLIDE 1: TITLE ===== -->
+<div class="slide active" data-slide="0">
+  <div class="slide-content" style="text-align: center;">
+    <p class="animate-in dim" style="font-size: 1rem; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 24px;">aiaiai workshop</p>
+    <h1 class="animate-in delay-1">Делаем <span class="pink">презу</span><br>с помощью AI</h1>
+    <p class="animate-in delay-2" style="font-size: 1.35rem; max-width: 600px; margin: 0 auto; margin-top: 16px;">От нуля до вау-эффекта<br>за один вечер</p>
+    <div class="animate-in delay-3" style="margin-top: 48px; display: flex; gap: 16px; justify-content: center; align-items: center;">
+      <span style="font-size: 0.95rem; color: var(--text-dim); opacity: 0.5;">стрелки или пробел</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 2: PLAN ===== -->
+<div class="slide" data-slide="1">
+  <div class="slide-content">
+    <h2 class="animate-in">Что будем делать</h2>
+    <p class="animate-in delay-1" style="margin-bottom: 32px;">4 шага — и у тебя готовая интерактивная презентация</p>
+    <div class="steps-visual animate-in delay-2">
+      <div class="step-dot" style="background: var(--pink-glow); color: var(--pink);">1<span class="step-label">Cursor</span></div>
+      <div class="step-connector"></div>
+      <div class="step-dot" style="background: var(--purple-glow); color: var(--purple);">2<span class="step-label">Папка</span></div>
+      <div class="step-connector"></div>
+      <div class="step-dot" style="background: rgba(92,224,216,0.15); color: var(--cyan);">3<span class="step-label">Магия</span></div>
+      <div class="step-connector"></div>
+      <div class="step-dot" style="background: var(--pink-glow); color: var(--pink);">4<span class="step-label">Преза!</span></div>
+    </div>
+    <div class="card animate-in delay-3" style="margin-top: 48px; text-align: center;">
+      <p style="font-size: 1.1rem;">Результат — <span class="pink" style="font-weight: 600;">HTML-файл</span>, который открывается в браузере.<br>Никакого PowerPoint. Анимации, интерактив, красота.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 3: STEP 1 — CURSOR ===== -->
+<div class="slide" data-slide="2">
+  <div class="slide-content">
+    <div class="step-badge pink-badge animate-in">1</div>
+    <h2 class="animate-in delay-1">Скачай <span class="pink">Cursor</span></h2>
+    <p class="animate-in delay-2" style="margin-bottom: 24px;">Cursor — это редактор кода со встроенным AI. Не пугайся слова "код" — мы будем просто разговаривать с ним.</p>
+    <div class="url-box animate-in delay-3" onclick="window.open('https://cursor.com','_blank')">
+      <span>cursor.com</span>
+      <span style="font-size: 0.85rem; color: var(--text-dim);">скачать</span>
+    </div>
+    <div class="card-row animate-in delay-4">
+      <div class="card" style="text-align: center;">
+        <p style="font-size: 2rem; margin-bottom: 8px;">macOS</p>
+        <p style="font-size: 0.95rem;">Скачай .dmg<br>Перетащи в Applications</p>
+      </div>
+      <div class="card" style="text-align: center;">
+        <p style="font-size: 2rem; margin-bottom: 8px;">Windows</p>
+        <p style="font-size: 0.95rem;">Скачай .exe<br>Запусти установщик</p>
+      </div>
+    </div>
+    <div class="card animate-in delay-5" style="border-left: 3px solid var(--pink); margin-top: 20px;">
+      <h3 style="color: var(--pink); margin-bottom: 8px;">&#9888; Важный момент — аккаунт</h3>
+      <p style="font-size: 1.1rem; color: var(--text);">При первом запуске Cursor попросит <span class="pink" style="font-weight: 600;">создать аккаунт</span>.</p>
+      <p style="font-size: 1.1rem; color: var(--text); margin-top: 8px;">Это бесплатно. Нужен только email.</p>
+      <p style="font-size: 1.1rem; color: var(--text); margin-top: 8px;">Без аккаунта дальше <span style="font-weight: 600;">не пустит</span> — не пропускай этот шаг.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 4: STEP 2 — FOLDER ===== -->
+<div class="slide" data-slide="3">
+  <div class="slide-content">
+    <div class="step-badge purple-badge animate-in">2</div>
+    <h2 class="animate-in delay-1">Создай <span class="purple">папку</span></h2>
+    <p class="animate-in delay-2" style="margin-bottom: 24px;">Место, где будет жить твоя презентация.</p>
+    <div class="card-row animate-in delay-3">
+      <div class="card" style="text-align: center;">
+        <p style="font-size: 2rem; margin-bottom: 12px;">macOS</p>
+        <p style="font-size: 1rem; color: var(--text-dim);">Рабочий стол &rarr; правый клик<br>&rarr; <span style="color: var(--purple);">Новая папка</span><br>&rarr; назови <span style="font-family: 'JetBrains Mono'; color: var(--orange);">my-presentation</span></p>
+      </div>
+      <div class="card" style="text-align: center;">
+        <p style="font-size: 2rem; margin-bottom: 12px;">Windows</p>
+        <p style="font-size: 1rem; color: var(--text-dim);">Рабочий стол &rarr; правый клик<br>&rarr; <span style="color: var(--purple);">Создать &rarr; Папку</span><br>&rarr; назови <span style="font-family: 'JetBrains Mono'; color: var(--orange);">my-presentation</span></p>
+      </div>
+    </div>
+    <div class="card animate-in delay-4" style="margin-top: 20px;">
+      <h3>Открой папку в Cursor</h3>
+      <p style="font-size: 1.05rem;">В Cursor: <span style="font-family: 'JetBrains Mono'; color: var(--cyan);">File &rarr; Open Folder</span> &rarr; выбери свою папку</p>
+      <p style="font-size: 0.9rem; color: var(--text-dim); margin-top: 8px;">Или просто перетащи папку на окно Cursor</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 5: STEP 3 — MAGIC PROMPT ===== -->
+<div class="slide" data-slide="4">
+  <div class="slide-content">
+    <div class="step-badge cyan-badge animate-in">3</div>
+    <h2 class="animate-in delay-1">Магический <span class="cyan">промпт</span></h2>
+    <p class="animate-in delay-2" style="margin-bottom: 20px;">Скопируй и вставь в чат Cursor. AI сам скачает и настроит всё что нужно.</p>
+    <div class="code-block animate-in delay-3" id="magicPrompt">
+      <button class="copy-btn" onclick="copyPrompt(this)">Скопировать</button>
+      <span class="prompt-text">Скачай файл с https://raw.githubusercontent.com/expremiental/presentation_skill/main/cursorrules и сохрани его как .cursorrules в корне текущего проекта</span>
+    </div>
+    <div class="card animate-in delay-4" style="border-left: 3px solid var(--cyan);">
+      <p style="font-size: 1.05rem;"><span class="cyan" style="font-weight: 600;">Что это делает?</span> Загружает инструкцию для AI, которая учит его делать крутые презентации. После этого AI в Cursor знает, как создавать интерактивные слайды.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 6: STEP 4 — PECHA KUCHA ===== -->
+<div class="slide" data-slide="5">
+  <div class="slide-content">
+    <div class="step-badge pink-badge animate-in">4</div>
+    <h2 class="animate-in delay-1">Ты расскажешь — <span class="pink">я сделаю презу</span></h2>
+    <p class="animate-in delay-2" style="margin-bottom: 28px;">Каждую <span class="pink" style="font-weight: 600;">среду в 20:00</span> мы собираемся у Толи на Парке Победы и рассказываем интересное в формате печа-куча. Теперь выступить ещё проще.</p>
+    <div class="code-block animate-in delay-3" id="pechaPrompt">
+      <button class="copy-btn" onclick="copyPrompt(this)">Скопировать</button>
+      <span class="prompt-text">Сделай презентацию в формате печа-куча (20 слайдов по 20 секунд). Контекст: показываю вживую в уютном пространстве, все свои, атмосфера чила и безопасности. Вайб: тёплый, дружелюбный, без пафоса. Спроси меня о чём будет преза.</span>
+    </div>
+    <p class="animate-in delay-4 dim" style="font-size: 0.9rem; margin-top: 12px;">20 слайдов &times; 20 секунд = 6 минут 40 секунд</p>
+  </div>
+</div>
+
+<!-- ===== SLIDE 7: OPEN IN BROWSER ===== -->
+<div class="slide" data-slide="6">
+  <div class="slide-content" style="display: flex; flex-direction: column; align-items: center;">
+    <h2 class="animate-in" style="text-align: center;">Открой в <span class="orange">браузере</span></h2>
+    <p class="animate-in delay-1" style="text-align: center; margin-bottom: 32px;">AI создаст файл <span style="font-family: 'JetBrains Mono'; color: var(--cyan);">presentation.html</span> в твоей папке.<br>Просто дважды кликни на него.</p>
+    <div class="browser-mock animate-in delay-2">
+      <div class="browser-bar">
+        <div class="browser-dot" style="background: #ff5f57;"></div>
+        <div class="browser-dot" style="background: #ffbd2e;"></div>
+        <div class="browser-dot" style="background: #28c840;"></div>
+        <div class="browser-url">file:///Users/me/my-presentation/presentation.html</div>
+      </div>
+      <div class="browser-body">
+        <div>
+          <h3>Твоя преза здесь</h3>
+          <p style="color: var(--text-dim); font-size: 1rem;">С анимациями, переходами и интерактивом</p>
+        </div>
+      </div>
+    </div>
+    <div class="card animate-in delay-3" style="margin-top: 24px; max-width: 700px; text-align: center;">
+      <p style="font-size: 1.05rem;">Не понравилось? Напиши в чат Cursor что поменять —<br>AI переделает. Хоть 10 раз.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 8: TIPS ===== -->
+<div class="slide" data-slide="7">
+  <div class="slide-content">
+    <h2 class="animate-in" style="text-align: center;">Лайфхаки</h2>
+    <div class="card-row animate-in delay-1" style="margin-top: 24px;">
+      <div class="flip-container" onclick="this.classList.toggle('flipped')">
+        <div class="flip-card">
+          <div class="flip-front">
+            <p style="font-size: 1.8rem;">&#128172;</p>
+            <h3 style="margin-top: 12px;">AI спросит сам</h3>
+            <p class="flip-hint">нажми, чтобы узнать</p>
+          </div>
+          <div class="flip-back">
+            <p style="font-size: 1rem; color: var(--text);">AI будет задавать вопросы, чтобы понять тебя. Не нужно придумывать идеальный запрос — просто отвечай честно и своими словами.</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-container" onclick="this.classList.toggle('flipped')">
+        <div class="flip-card">
+          <div class="flip-front">
+            <p style="font-size: 1.8rem;">&#128260;</p>
+            <h3 style="margin-top: 12px;">Итерируй</h3>
+            <p class="flip-hint">нажми, чтобы узнать</p>
+          </div>
+          <div class="flip-back">
+            <p style="font-size: 1rem; color: var(--text);">Первая версия не идеальна? Скажи AI что поменять: "сделай заголовки крупнее", "добавь анимацию", "поменяй цвета на тёплые".</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-container" onclick="this.classList.toggle('flipped')">
+        <div class="flip-card">
+          <div class="flip-front">
+            <p style="font-size: 1.8rem;">&#127381;</p>
+            <h3 style="margin-top: 12px;">Отправляй кому угодно</h3>
+            <p class="flip-hint">нажми, чтобы узнать</p>
+          </div>
+          <div class="flip-back">
+            <p style="font-size: 1rem; color: var(--text);">HTML-файл можно скинуть кому угодно — откроется в любом браузере на любом устройстве. Никаких программ не нужно.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 9: FINALE ===== -->
+<div class="slide" data-slide="8">
+  <div class="slide-content" style="text-align: center;">
+    <p class="animate-in" style="font-size: 4rem; margin-bottom: 24px;">&#10024;</p>
+    <h1 class="animate-in delay-1">Теперь у тебя<br><span class="pink">суперсила</span></h1>
+    <p class="animate-in delay-2" style="font-size: 1.35rem; max-width: 600px; margin: 24px auto 0;">Ты умеешь создавать презентации,<br>которые выглядят на миллион.</p>
+    <div class="animate-in delay-3" style="margin-top: 48px;">
+      <p style="font-size: 1rem; color: var(--text-dim);">Вопросы? Пиши в чат группы</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== NAV ===== -->
+<div class="nav-dots" id="navDots"></div>
+<div class="slide-counter" id="slideCounter">1 / 9</div>
+
+<script>
+// ===== SLIDE ENGINE =====
+const slides = document.querySelectorAll('.slide');
+let current = 0;
+const total = slides.length;
+
+function goTo(n) {
+  if (n < 0 || n >= total) return;
+  slides[current].classList.remove('active');
+  current = n;
+  slides[current].classList.add('active');
+  updateNav();
+  updateCounter();
+  resetAnimations();
+}
+
+function next() { goTo(current + 1); }
+function prev() { goTo(current - 1); }
+
+function updateCounter() {
+  document.getElementById('slideCounter').textContent = (current + 1) + ' / ' + total;
+}
+
+// ===== NAV DOTS =====
+function buildNav() {
+  const nav = document.getElementById('navDots');
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('button');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => goTo(i);
+    nav.appendChild(dot);
+  }
+}
+
+function updateNav() {
+  const dots = document.querySelectorAll('.nav-dot');
+  dots.forEach((d, i) => d.classList.toggle('active', i === current));
+}
+
+// ===== ANIMATIONS RESET =====
+function resetAnimations() {
+  const slide = slides[current];
+  const anims = slide.querySelectorAll('.animate-in');
+  anims.forEach(el => {
+    el.style.animation = 'none';
+    el.offsetHeight; // trigger reflow
+    el.style.animation = '';
+  });
+}
+
+// ===== KEYBOARD =====
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+    e.preventDefault();
+    next();
+  }
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    e.preventDefault();
+    prev();
+  }
+});
+
+// ===== TOUCH =====
+let touchStartX = 0;
+document.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+});
+document.addEventListener('touchend', (e) => {
+  const diff = touchStartX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 50) {
+    diff > 0 ? next() : prev();
+  }
+});
+
+// ===== COPY FUNCTIONS =====
+function copyPrompt(btn) {
+  const block = btn.parentElement;
+  const text = block.querySelector('.prompt-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Скопировано!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Скопировать';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function copyExamplePrompt(el) {
+  const text = el.querySelector('.prompt-text-block p:first-child').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    el.style.borderColor = 'rgba(92, 224, 216, 0.4)';
+    setTimeout(() => {
+      el.style.borderColor = '';
+    }, 1500);
+  });
+}
+
+// ===== BACKGROUND CANVAS =====
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let mouseX = 0, mouseY = 0;
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+function initParticles() {
+  particles = [];
+  const count = Math.floor((canvas.width * canvas.height) / 18000);
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 1.5 + 0.5,
+      alpha: Math.random() * 0.3 + 0.05,
+      color: ['255,107,157', '255,170,92', '180,142,255', '92,224,216'][Math.floor(Math.random() * 4)]
+    });
+  }
+}
+
+function drawParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    // subtle mouse repulsion
+    const dx = p.x - mouseX;
+    const dy = p.y - mouseY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 120) {
+      p.x += dx * 0.005;
+      p.y += dy * 0.005;
+    }
+
+    p.x += p.vx;
+    p.y += p.vy;
+
+    if (p.x < 0) p.x = canvas.width;
+    if (p.x > canvas.width) p.x = 0;
+    if (p.y < 0) p.y = canvas.height;
+    if (p.y > canvas.height) p.y = 0;
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${p.color}, ${p.alpha})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(drawParticles);
+}
+
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  initParticles();
+});
+
+// ===== INIT =====
+resizeCanvas();
+initParticles();
+drawParticles();
+buildNav();
+</script>
+</body>
+</html>

@@ -2,6 +2,10 @@
 
 Create presentations that make audiences say "how did they do that?" Single self-contained HTML file. No dependencies. Open in any browser.
 
+## Reference Example
+
+Study `example.html` in this project before building. It demonstrates the quality bar: background canvas particles, smooth slide transitions, interactive flip cards, copy-to-clipboard buttons, responsive design, proper typography pairing (Unbounded + Inter + JetBrains Mono). Match or exceed this level of polish and interactivity.
+
 ## Workflow
 
 ### 1. Discover — Interview Before Building
