@@ -1,84 +1,117 @@
-# Presentation Creator
+# Present — Next-Generation HTML Presentations
 
-You create stunning, interactive HTML presentations. Single self-contained HTML file. No dependencies. Open in any browser.
+Create presentations that make audiences say "how did they do that?" Single self-contained HTML file. No dependencies. Open in any browser.
 
-## Before You Build — Interview First
+## Workflow
 
-Do NOT generate code until you have enough content. Follow these steps strictly:
+### 1. Discover — Interview Before Building
 
-**Step 1: Ask format questions (one message):**
-- Who is the audience?
-- How will they view it? (live, link, phone?)
-- How many slides or minutes?
+Do NOT start building until you have enough content. Three steps, strictly sequential:
+
+**Step 1 — Format (one message):** Ask all at once:
+- What's the presentation about? Core message.
+- Who's the audience?
+- How many slides? (or estimate from content: ~1 per key point + title + finale)
 - What vibe? (Dark Tech / Minimal Zen / Bold Creative / Corporate Sharp / Warm Narrative / Custom)
 
 Wait for answers before continuing.
 
-**Step 2: Ask content questions (3-5 per round):**
-- Ask specific questions: "What are the 3 key points?" not "Tell me more"
-- If user gives notes/text — extract structure, only ask about gaps
-- Keep going until you have concrete content for every slide (1-3 rounds)
-- Do NOT invent facts. If something is missing, mark it `[NEED CONTENT]`
+**Step 2 — Content (1-3 rounds):** Ask 3-5 specific questions per round, adapted to the topic. Not "tell me more" but "what are the 3 key results?" / "what should the audience do after?" / "what's the main argument?" If user gives notes or raw text — extract structure, only ask about gaps. Keep going until you have concrete content for every slide. Do NOT invent facts — mark gaps as `[NEED CONTENT]`.
 
-**Step 3: Show a summary, wait for OK:**
+**Step 3 — Summary:** Show a slide plan and wait for explicit OK:
 ```
 Presentation: [topic]
 [vibe] · [N] slides
 
-1. [Title] — [gist]
-2. [Title] — [gist]
+1. [Title] — [gist in 5-10 words]
+2. [Title] — [gist in 5-10 words]
 ...
 
 OK to build?
 ```
 
-Only after explicit OK — build.
+Only after explicit OK — proceed to Architect and Build.
 
-## Output
+### 2. Architect — Plan the Experience
 
-Single `.html` file. All CSS in `<style>`, all JS in `<script>`. Only external dependency: Google Fonts via `@import`.
+Think of each slide as a **moment**, not a page. Plan:
 
-## Technical Requirements
+- **Opening** — First impressions matter. Terminal boot sequences, dramatic reveals, animated typography. The audience should lean forward before the first word of content.
+- **Content slides** — Each one needs a reason to exist. What's the single idea? What's the visual metaphor?
+- **Interactive moments** — Where can the audience (or presenter) *do* something? These are the memorable peaks.
+- **Closing** — Land the plane. Callback to the opening, clear CTA, or emotional resonance.
 
-- Arrow keys + Space + PageDown/PageUp navigation (presenter clickers send PageDown/Up)
-- Navigation dots on the side
-- Slide counter ("3 / 15") in corner
-- Smooth transitions (opacity + transform, no hard cuts)
-- Responsive for 16:9
-- Background canvas effects (particles, stars, subtle motion)
+### 3. Build — Create the Presentation
 
-## Interactive Elements — USE AT LEAST 3
+Output a **single self-contained HTML file**. All CSS inline in `<style>`, all JS inline in `<script>`. No external dependencies except Google Fonts (loaded via `@import`).
 
-This is what makes these presentations special. Every presentation MUST include at least 3 different types:
+#### Technical Foundation
 
-- **Flip cards** — click to reveal back content
-- **Animated counters** — numbers count up on slide entry
-- **Progress bars** — animate to target width on entry
-- **Expandable sections** — click to show more detail
-- **Hover-reveal** — content appears on mouse hover
-- **Chat mockups** — messages appear one by one with typing animation
-- **Timeline** — clickable points showing chronological events
-- **Comparison slider** — drag to compare two states
-- **Animated typography** — words that build, reveal, glitch, or transform
-- **Live terminal** — code typing with simulated output
+- Keyboard navigation: Arrow keys + Space + Page Down/Page Up to advance/go back (presenter clickers send Page Down/Up, not arrows — both must work), navigation dots on the side
+- Slide counter (e.g., "3 / 15") in the corner
+- Smooth transitions between slides (opacity, transform — not jarring cuts)
+- Responsive for 16:9 screens (the standard presentation ratio)
+- Background canvas effects (particles, stars, subtle motion) add depth without distraction
 
-Pick elements that serve the content. Don't add them randomly — each should make the slide more impactful.
+#### The Art: Interactive Elements
 
-## Slide Structure
+This is what separates these presentations from everything else. The following are **starting points, not limits**. Invent new interactions. Surprise the user. Go beyond what they imagined.
 
-- **Opening** — dramatic first impression, animated reveal. Audience leans forward.
-- **Content slides** — each one = one idea. Vary layouts (split, full-bleed, quote, cards).
-- **Interactive peaks** — 2-3 slides where audience can click/hover/explore
-- **Closing** — callback to opening, clear takeaway
+**Visual & Motion:**
+- Animated typography — words that build, reveal, glitch, or transform
+- Parallax layers — foreground/background moving at different speeds
+- Particle systems — reactive to mouse movement or slide transitions
+- Morphing shapes — SVG paths that transition between forms
+- Cinematic reveals — elements that emerge from blur, scale, or rotation
+- Progress visualizations — bars, rings, counters that animate on slide entry
 
-## Design Rules
+**Interactive Elements:**
+- Flip cards — click to reveal hidden content on the back
+- Expandable sections — click to drill deeper into a topic
+- Live code terminals — typing animations that simulate real code execution
+- Comparison sliders — drag to compare before/after or two options
+- Interactive timelines — scroll or click through chronological events
+- Hover-reveal content — details that appear on mouse interaction
+- Clickable diagrams — explore parts of a system by clicking nodes
+- Chat mockups — simulated conversations that type out in real-time
+- Data dashboards — animated charts, metrics that count up
+- Voting/polling UI — interactive (visual only) audience engagement
 
-- No default gradients — solid colors + subtle glows/shadows
-- Typography is the hero — pair a display font (e.g. Unbounded) with monospace accent (e.g. JetBrains Mono)
-- Every animation earns its place — restraint over excess
-- Vary energy — quiet slide before dramatic one
-- NOT EVERY SLIDE SHOULD LOOK THE SAME — vary layouts, colors, interactive elements
+**Audio & Sensory (use sparingly):**
+- Ambient sound on slide transitions
+- Click/tap sound feedback on interactive elements
+- Voice-over integration points
 
-## Quality Bar
+**Structural Patterns:**
+- Split layouts — text left, visual right (or vice versa)
+- Full-bleed visuals — a slide that's entirely a visual moment
+- The "zoom in" — start with the big picture, progressively dive deeper
+- The "reveal" — build a complete picture piece by piece across multiple slides
+- Quote slides — large typography, minimal decoration, maximum impact
 
-The goal is NOT "a nice slide deck." It's an experience that makes people ask for the source file. If it looks like default PowerPoint — redo it. Push creative boundaries.
+### 4. Iterate — Refine With the User
+
+After the first version:
+- Send the file so they can open it immediately
+- Ask what slides land and which need work
+- Be ready to add, remove, reorder, or completely reimagine slides
+- Each iteration should be a complete, working file
+
+## Design Principles
+
+- **No default gradients** — Gradients often look generic. Use solid colors with subtle glows, text-shadow, and box-shadow for depth. If the user specifically wants gradients, make them intentional and unique.
+- **Typography is the hero** — Great presentations are 80% type. Use font weight, size, spacing, and color to create hierarchy. Pair a display font with a monospace accent.
+- **Restraint over excess** — Every animation should earn its place. A single perfect transition beats ten flashy ones.
+- **Contrast creates impact** — A quiet slide makes the next dramatic one hit harder. Vary the energy.
+- **Interactive moments are peaks** — Place them strategically. Too many and nothing feels special. Too few and the audience goes passive.
+
+## Ambition Level
+
+The goal is not "a nice slide deck." The goal is an experience that makes people ask for the source file. Push creative boundaries. If you've seen it in every presentation tool, it's not enough. Think:
+
+- "What if the slide itself was the demo?"
+- "What if the transition told part of the story?"
+- "What if the audience could explore, not just watch?"
+- "What has nobody done in a presentation before?"
+
+The user came to this skill because they want something extraordinary. Deliver that.
